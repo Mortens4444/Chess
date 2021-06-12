@@ -4,10 +4,17 @@
         <title>Chess</title>
         <meta charset="UTF-8">
 		<link rel="stylesheet" href="board.css">
-		<script src="chessboard.js"/></script>
+
+		<script type="text/javascript">
+			loadDarkState = true;
+		</script>
+		<script src="initializer.js"/></script>
+		<script src="domManipulator.js"/></script>
+		<script src="chessBoardBuilder.js"/></script>
+		<script src="chessGame.js"/></script>
     </head>
-    <body onload="switchSide();">
-		<input type="button" onclick="newGame();" value="New Game" />
-		<input type="button" onclick="switchSide();" value="Switch Side" />
+    <body onload="chessGame.switchSide();">
+		<input type="button" onclick="chessGame.newGame();" value="New Game" />
+		<input type="button" onclick="chessGame.switchSide();" value="Switch Side" />
     </body>
 </html>
