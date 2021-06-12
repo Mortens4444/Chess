@@ -1,4 +1,5 @@
 include("light_state.js");
+//include("dark_state.js");
 
 const a = "A";
 const h = "H";
@@ -7,6 +8,8 @@ const th = "th";
 const tr = "tr";
 const td = "td";
 const tc = "tc";
+const id = "id";
+const selected = "selected";
 
 let moveFrom = null;
 let darkToMove = false;
@@ -17,41 +20,47 @@ function switchSide() {
 }
 
 function include(sourceFile) {
-  let script  = document.createElement("script");
+  let head = document.getElementsByTagName("head")[0];
+  let script  = createElement("script", head);
   script.src  = sourceFile;
   script.type = "text/javascript";
   script.defer = true;
-  let head = document.getElementsByTagName("head")[0];
-  head.appendChild(script);
 }
 
 function charShift(ch, shift) {
 	return String.fromCharCode(ch.charCodeAt(0) + shift);
 }
 
-function createTableColumns(tableBody) {
-	let header = document.createElement(tr);
-	tableBody.appendChild(header);
-	header.appendChild(document.createElement(th));
+function createElement(elementName, parent) {
+	let element = document.createElement(elementName);
+	parent.appendChild(element);
+	return element;
+}
+
+function createTableFiles(tableBody) {
+	let header = createElement(tr, tableBody);
+	createElement(th, header);
 	
-	for (let columnIndex = 1; columnIndex <= 8; columnIndex++) {
-		let column = document.createElement(th);
-		column.setAttribute("id", tc + columnIndex);
-		column.textContent = darkToMove ? charShift(h, 1 - columnIndex) : charShift(a, columnIndex - 1);
-		header.appendChild(column);
+	for (let fileIndex = 0; fileIndex < 8; fileIndex++) {
+		let fileText = getFileText(fileIndex);
+		createTableHeaderCell(header, tc + fileIndex + 1, fileText);
 	}
 }
 
-function createTableRow(tableBody, rowNumber) {
-	let row = document.createElement(tr);
-	tableBody.appendChild(row);
+function createTableHeaderCell(parent, idValue, text) {
+	let header = createElement(th, parent);
+	header.setAttribute(id, idValue);
+	header.textContent = text;
+}
 
-	let rowHeader = document.createElement(th);
-	rowHeader.setAttribute("id", tr + rowNumber);
-	rowHeader.textContent = rowNumber;
-	row.appendChild(rowHeader);
+function createTableRank(tableBody, rankNumber) {
+	let rank = createElement(tr, tableBody);
+	createTableHeaderCell(rank, tr + rankNumber, rankNumber);
+	return rank;
+}
 
-	return row;
+function getFileText(fileIndex) {
+	return darkToMove ? charShift(h, -fileIndex) : charShift(a, fileIndex);
 }
 
 function isWhiteOnTop() {
@@ -59,60 +68,60 @@ function isWhiteOnTop() {
 }
 
 function createSquares(tableBody) {
-	for (let rowIndex = 0; rowIndex < 8; rowIndex++) {
-		let rowNumber = darkToMove ? rowIndex + 1 : 8 - rowIndex;
-		let row = createTableRow(tableBody, rowNumber);
+	for (let rankIndex = 0; rankIndex < 8; rankIndex++) {
+		let rankNumber = darkToMove ? rankIndex + 1 : 8 - rankIndex;
+		let rank = createTableRank(tableBody, rankNumber);
 		
-		for (let columnIndex = 0; columnIndex < 8; columnIndex++) {
-			let cell = document.createElement(td);
-			let columnName = darkToMove ? charShift(h, -columnIndex) : charShift(a, columnIndex);
-			cell.setAttribute("id", columnName + rowNumber);
-			cell.onclick = function(event) {
-				if (moveFrom == null) {
-					cell.classList.add("selected");
-					moveFrom = cell;
-				} else {
-					moveFrom.classList.remove("selected");
-
-					let toCellIndex = getCellIndex(cell);
-					let fromCellIndex = getCellIndex(moveFrom);
-					
-					state[toCellIndex.rank][toCellIndex.column] = state[fromCellIndex.rank][fromCellIndex.column];
-					state[fromCellIndex.rank][fromCellIndex.column] = ' ';
-					
-					showOnChessTable();
-					moveFrom = null;
-				}
-			}
-			onclick="newGame();"
-			cell.setAttribute("class", (rowIndex + columnIndex) % 2 == 1 ? "dark" : "light");
-			cell.textContent = isWhiteOnTop() ? state[rowNumber - 1][darkToMove ? columnIndex : 7 - columnIndex] :
-												state[darkToMove ? 7 - rowIndex : rowIndex][darkToMove ? 7 - columnIndex : columnIndex];
-			row.appendChild(cell);
+		for (let fileIndex = 0; fileIndex < 8; fileIndex++) {
+			let cell = createElement(td, rank);
+			cell.setAttribute(id, getFileText(fileIndex) + rankNumber);
+			cell.onclick = cellOnClick;
+			cell.setAttribute("class", (rankIndex + fileIndex) % 2 == 1 ? "dark" : "light");
+			cell.textContent = isWhiteOnTop() ? state[rankNumber - 1][darkToMove ? fileIndex : 7 - fileIndex] :
+												state[darkToMove ? 7 - rankIndex : rankIndex][darkToMove ? 7 - fileIndex : fileIndex];
 		}
 	}
 }
 
-function getCellIndex(cell) {
+function cellOnClick(event) {
+	if (moveFrom == null) {
+		this.classList.add(selected);
+		moveFrom = this;
+	} else {
+		moveFrom.classList.remove(selected);
+
+		let toCell = getCell(this);
+		let fromCell = getCell(moveFrom);
+		
+		state[toCell.rank][toCell.file] = state[fromCell.rank][fromCell.file];
+		state[fromCell.rank][fromCell.file] = ' ';
+		
+		showOnChessTable();
+		moveFrom = null;
+	}
+}
+
+function getCell(cell) {
 	let rank = parseInt(cell.id[1]);
-	return isWhiteOnTop() ? {  column: h.charCodeAt(0) - cell.id.charCodeAt(0), rank: rank - 1 } : { column: a.charCodeAt(0) - cell.id.charCodeAt(0) - 1, rank: 8 - rank };
+	let file = cell.id.charCodeAt(0);
+	return isWhiteOnTop() ?
+		{ file: h.charCodeAt(0) - file, rank: rank - 1 } :
+		{ file: file - a.charCodeAt(0), rank: 8 - rank };
 }
 
 function createChessTable() {
 	let body = document.getElementsByTagName("body")[0];
-	let board = document.createElement(table);
+	let board = createElement(table, body);
 	board.setAttribute("class", "chess-board");
-	body.appendChild(board);
-	let tableBody = document.createElement("tbody");
-	board.appendChild(tableBody);
+	let tableBody = createElement("tbody", board);
 
-	createTableColumns(tableBody);
+	createTableFiles(tableBody);
 	createSquares(tableBody);
 }
 
 function newGame() {
-	for (let rowIndex = 0; rowIndex < 8; rowIndex++) {
-		state[rowIndex] = initialState[rowIndex].map((x) => x);
+	for (let rankIndex = 0; rankIndex < 8; rankIndex++) {
+		state[rankIndex] = initialState[rankIndex].map((x) => x);
 	}
 	showOnChessTable();
 }
