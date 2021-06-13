@@ -14,7 +14,11 @@
 		<script src="chessGame.js"/></script>
     </head>
     <body onload="chessGame.switchSide();">
-		<input type="button" onclick="chessGame.newGame();" value="New Game" />
-		<input type="button" onclick="chessGame.switchSide();" value="Switch Side" />
+
+		<div class="menu">
+			<a href="#" onclick="chessGame.newGame();">New Game</a>
+			<a href="#" onclick="chessGame.switchSide();">Switch Side</a>
+		</div>
+
     </body>
 </html>
